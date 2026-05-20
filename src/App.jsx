@@ -127,17 +127,17 @@ function Dashboard({lots,user}) {
   const totalRecu=lots.reduce((s,l)=>s+(l.poidsReception||0),0);
   const totalNet=lots.reduce((s,l)=>s+(l.poidsNet||l.poidsReception||0),0);
   const rend=totalRecu>0?(totalNet/totalRecu*100).toFixed(1):0;
-  const stats=[{label:"Lots aujourd'hui",value:lotsToday.length,icon:"📦",color:"#10b981"},{label:"En cours",value:lots.filter(l=>l.etapeActuelle!=="expédition").length,icon:"⚙️",color:"#3b82f6"},{label:"Kg reçus",value:${totalRecu.toFixed(0)} kg,icon:"⚖️",color:"#f59e0b"},{label:"Rendement",value:${rend}%,icon:"✅",color:"#a78bfa"}];
+  const stats=[{label:"Lots aujourd'hui",value:lotsToday.length,icon:"📦",color:"#10b981"},{label:"En cours",value:lots.filter(l=>l.etapeActuelle!=="expédition").length,icon:"⚙️",color:"#3b82f6"},{label:"Kg reçus",value:""+(totalRecu.toFixed(0))+" kg",icon:"⚖️",color:"#f59e0b"},{label:"Rendement",value:""+(rend)+"%",icon:"✅",color:"#a78bfa"}];
   return (
     <div>
-      <PH title="Tableau de bord" sub={Bonjour, ${user.nom} — ${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}}/>
+      <PH title="Tableau de bord" sub={"Bonjour, "+user.nom+" — "+new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}/>
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:13,marginBottom:24}}>
         {stats.map((s,i)=><div key={i} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:20}}><div style={{fontSize:24}}>{s.icon}</div><div style={{fontSize:24,fontWeight:800,color:s.color,marginTop:8}}>{s.value}</div><div style={{fontSize:12,color:"rgba(255,255,255,0.38)",marginTop:3}}>{s.label}</div></div>)}
       </div>
       <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.05)",borderRadius:14,padding:20,marginBottom:20}}>
         <div style={{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.4)",marginBottom:14,textTransform:"uppercase",letterSpacing:1}}>Pipeline de production</div>
         <div style={{display:"flex",gap:7}}>
-          {ETAPES.map(e=>{const c=lots.filter(l=>l.etapeActuelle===e).length;return(<div key={e} style={{flex:1,textAlign:"center"}}><div style={{height:46,background:${EC[e]}15,border:1px solid ${EC[e]}30,borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,fontWeight:800,color:EC[e]}}>{c}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.3)",marginTop:5,textTransform:"capitalize"}}>{e}</div></div>);})}
+          {ETAPES.map(e=>{const c=lots.filter(l=>l.etapeActuelle===e).length;return(<div key={e} style={{flex:1,textAlign:"center"}}><div style={{height:46,background:""+(EC[e])+"15",border:"1px solid "+(EC[e])+"30",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,fontWeight:800,color:EC[e]}}>{c}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.3)",marginTop:5,textTransform:"capitalize"}}>{e}</div></div>);})}
         </div>
       </div>
       <Card title="🕐 Derniers lots">
@@ -150,13 +150,13 @@ function Dashboard({lots,user}) {
 function Reception({lots,setLots,setMouvements,user}) {
   const [f,sF]=useState({produit:"",variete:"",origine:"",poidsReception:"",temperature:"",observation:""});
   const [ok,sOk]=useState(""); const upd=(k,v)=>sF(x=>({...x,[k]:v}));
-  const genId=()=>{const pfx=f.produit?.startsWith("Fraises")?"FR":f.produit?.startsWith("Avocats")?"AV":"PR";return ${pfx}-${new Date().toISOString().slice(2,10).replace(/-/g,"")}-${String(lots.length+1).padStart(4,"0")};};
+  const genId=()=>{const pfx=f.produit?.startsWith("Fraises")?"FR":f.produit?.startsWith("Avocats")?"AV":"PR";return ""+(pfx)+"-"+(new Date().toISOString().slice(2,10).replace(/-/g,""))+"-"+(String(lots.length+1).padStart(4,"0"))+"";};
   const submit=()=>{
     if(!f.produit||!f.origine||!f.poidsReception)return;
     const id=genId(),now=new Date().toISOString();
     const lot={id,...f,poidsReception:parseFloat(f.poidsReception),poidsNet:parseFloat(f.poidsReception),etapeActuelle:"réception",dateReception:now,historique:[{etape:"réception",date:now,user:user.nom,poids:parseFloat(f.poidsReception),note:f.observation}]};
     setLots(p=>[...p,lot]); setMouvements(p=>[...p,{id:Date.now(),lotId:id,etape:"réception",date:now,user:user.nom,poids:parseFloat(f.poidsReception)}]);
-    sF({produit:"",variete:"",origine:"",poidsReception:"",temperature:"",observation:""}); sOk(✅ Lot ${id} enregistré !); setTimeout(()=>sOk(""),4000);
+    sF({produit:"",variete:"",origine:"",poidsReception:"",temperature:"",observation:""}); sOk("✅ Lot "+(id)+" enregistré !"); setTimeout(()=>sOk(""),4000);
   };
   return (
     <div><PH title="🚛 Réception" sub="Enregistrement des matières premières"/>
@@ -173,7 +173,7 @@ function Reception({lots,setLots,setMouvements,user}) {
         <FL>Observation</FL><FT value={f.observation} onChange={v=>upd("observation",v)} ph="État général, remarques..."/>
         <Btn color="#10b981" onClick={submit}>✅ Enregistrer le lot</Btn>
       </Card>
-      <Card title={Lots en réception (${lots.filter(l=>l.etapeActuelle==="réception").length})}>
+      <Card title={"Lots en réception ("+lots.filter(l=>l.etapeActuelle==="réception").length+")"}>
         {lots.filter(l=>l.etapeActuelle==="réception").length===0?<Empty txt="Aucun lot"/>:lots.filter(l=>l.etapeActuelle==="réception").map(l=><LotMini key={l.id} lot={l}/>)}
       </Card>
     </div></div>
@@ -190,7 +190,7 @@ function Traitement({lots,setLots,setMouvements,user}) {
     const now=new Date().toISOString(),kg=parseFloat(f.poids),pertes=parseFloat(f.pertes||0);
     setLots(p=>p.map(l=>l.id===sel.id?{...l,etapeActuelle:f.etape,poidsNet:kg,historique:[...(l.historique||[]),{etape:f.etape,date:now,user:user.nom,poids:kg,pertes,note:f.note}]}:l));
     setMouvements(p=>[...p,{id:Date.now(),lotId:sel.id,etape:f.etape,date:now,user:user.nom,poids:kg,pertes}]);
-    sOk(✅ Lot ${sel.id} → ${f.etape}); sSel(null); sF({etape:"",poids:"",pertes:"",note:""}); setTimeout(()=>sOk(""),4000);
+    sOk("✅ Lot "+(sel.id)+" → "+(f.etape)+""); sSel(null); sF({etape:"",poids:"",pertes:"",note:""}); setTimeout(()=>sOk(""),4000);
   };
   return (
     <div><PH title="⚙️ Traitement" sub="Suivi des étapes de transformation"/>
@@ -199,14 +199,14 @@ function Traitement({lots,setLots,setMouvements,user}) {
       <Card title="Lots à traiter">
         {dispo.length===0?<Empty txt="Aucun lot disponible"/>:dispo.map(l=>(
           <div key={l.id} onClick={()=>{sSel(l);sF({etape:"",poids:String(l.poidsNet||l.poidsReception),pertes:"",note:""}); }}
-            style={{padding:13,borderRadius:10,marginBottom:7,cursor:"pointer",background:sel?.id===l.id?"rgba(16,185,129,0.1)":"rgba(255,255,255,0.03)",border:1px solid ${sel?.id===l.id?"rgba(16,185,129,0.35)":"rgba(255,255,255,0.06)"},transition:"all 0.15s"}}>
+            style={{padding:13,borderRadius:10,marginBottom:7,cursor:"pointer",background:sel?.id===l.id?"rgba(16,185,129,0.1)":"rgba(255,255,255,0.03)",border:"1px solid "+(sel?.id===l.id?"rgba(16,185,129,0.35)":"rgba(255,255,255,0.06)")+"",transition:"all 0.15s"}}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><Mono>{l.id}</Mono><Badge etape={l.etapeActuelle}/></div>
             <div style={{fontSize:12,color:"#e2e8f0",marginTop:4}}>{l.produit} — {l.poidsNet||l.poidsReception} kg</div>
             <div style={{fontSize:11,color:"rgba(255,255,255,0.28)",marginTop:2}}>{l.origine}</div>
           </div>
         ))}
       </Card>
-      <Card title={sel?Traitement: ${sel.id}:"Sélectionner un lot"}>
+      <Card title={sel?"Traitement: "+(sel.id)+"":"Sélectionner un lot"}>
         {!sel?<Empty txt="← Cliquer sur un lot"/>:(
           <>
             <div style={{background:"rgba(255,255,255,0.04)",borderRadius:9,padding:11,marginBottom:14}}>
@@ -236,19 +236,19 @@ function Expedition({lots,setLots,setMouvements,user}) {
   const expedier=()=>{
     if(!sel||!f.destination||!f.poidsFinal)return;
     const now=new Date().toISOString(),kg=parseFloat(f.poidsFinal);
-    setLots(p=>p.map(l=>l.id===sel.id?{...l,etapeActuelle:"expédition",poidsNet:kg,expedition:{...f,date:now},historique:[...(l.historique||[]),{etape:"expédition",date:now,user:user.nom,poids:kg,note:→ ${f.destination} | ${f.client} | ${f.numCamion}}]}:l));
+    setLots(p=>p.map(l=>l.id===sel.id?{...l,etapeActuelle:"expédition",poidsNet:kg,expedition:{...f,date:now},historique:[...(l.historique||[]),{etape:"expédition",date:now,user:user.nom,poids:kg,note:"→ "+(f.destination)+" | "+(f.client)+" | "+(f.numCamion)+""}]}:l));
     setMouvements(p=>[...p,{id:Date.now(),lotId:sel.id,etape:"expédition",date:now,user:user.nom,poids:kg}]);
-    sOk(✅ Lot ${sel.id} expédié → ${f.destination} — Client: ${f.client});
+    sOk("✅ Lot "+(sel.id)+" expédié → "+(f.destination)+" — Client: "+(f.client)+"");
     sSel(null); sF({client:"",destination:"",transporteur:"",numCamion:"",nbCartons:"",poidsFinal:"",tempCamion:"",note:""}); setTimeout(()=>sOk(""),5000);
   };
   return (
     <div><PH title="📦 Expédition" sub="Bons d'expédition & chargements"/>
     {ok&&<Alert txt={ok}/>}
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-      <Card title={Lots prêts (${prets.length})}>
+      <Card title={"Lots prêts ("+prets.length+")"}>
         {prets.length===0?<Empty txt="Aucun lot prêt — passer par Stockage"/>:prets.map(l=>(
           <div key={l.id} onClick={()=>{sSel(l);sF(x=>({...x,poidsFinal:String(l.poidsNet||l.poidsReception)}));}}
-            style={{padding:13,borderRadius:10,marginBottom:7,cursor:"pointer",background:sel?.id===l.id?"rgba(20,184,166,0.1)":"rgba(255,255,255,0.03)",border:1px solid ${sel?.id===l.id?"rgba(20,184,166,0.35)":"rgba(255,255,255,0.06)"},transition:"all 0.15s"}}>
+            style={{padding:13,borderRadius:10,marginBottom:7,cursor:"pointer",background:sel?.id===l.id?"rgba(20,184,166,0.1)":"rgba(255,255,255,0.03)",border:"1px solid "+(sel?.id===l.id?"rgba(20,184,166,0.35)":"rgba(255,255,255,0.06)")+"",transition:"all 0.15s"}}>
             <div style={{display:"flex",justifyContent:"space-between"}}><Mono clr="#14b8a6">{l.id}</Mono><Badge etape={l.etapeActuelle}/></div>
             <div style={{fontSize:12,color:"#e2e8f0",marginTop:4}}>{l.produit} — <b>{l.poidsNet||l.poidsReception} kg</b></div>
             <div style={{fontSize:11,color:"rgba(255,255,255,0.28)",marginTop:2}}>{l.origine}</div>
@@ -288,7 +288,7 @@ function Lots({lots}) {
   return (
     <div>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:22}}>
-        <PH title="🗂️ Tous les lots" sub={${lots.length} lots enregistrés}/>
+        <PH title="🗂️ Tous les lots" sub={""+(lots.length)+" lots enregistrés"}/>
         <button onClick={()=>exportCSV(fil)} style={{padding:"10px 16px",background:"linear-gradient(135deg,#10b981,#059669)",border:"none",borderRadius:9,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>⬇️ Export CSV ({fil.length})</button>
       </div>
       <div style={{display:"flex",gap:9,marginBottom:18}}>
@@ -304,7 +304,7 @@ function Lots({lots}) {
         <Table headers={["Lot N°","Produit","Ferme","Reçu","Net","Pertes","Client","Destination","Étape","Date","⋯"]}
           rows={fil.length===0?[[<td colSpan={11} style={{textAlign:"center",padding:36,color:"rgba(255,255,255,0.22)"}}>Aucun résultat</td>]]:fil.map(l=>{
             const p=l.poidsReception-(l.poidsNet||l.poidsReception),pct=l.poidsReception>0?(p/l.poidsReception*100).toFixed(1):0;
-            return [<Mono>{l.id}</Mono>,l.produit,l.origine,<span style={{color:"#f59e0b",fontWeight:600}}>{l.poidsReception} kg</span>,<span style={{color:"#60a5fa",fontWeight:600}}>{l.poidsNet||l.poidsReception} kg</span>,<span style={{color:p>0?"#f87171":"rgba(255,255,255,0.22)"}}>{p>0?-${p.toFixed(1)}kg (${pct}%):"—"}</span>,<b style={{color:"#e2e8f0"}}>{l.expedition?.client||"—"}</b>,l.expedition?.destination||"—",<Badge etape={l.etapeActuelle}/>,new Date(l.dateReception).toLocaleDateString("fr-FR"),<button onClick={()=>sSel(l)} style={{padding:"4px 9px",borderRadius:6,border:"1px solid rgba(255,255,255,0.1)",background:"transparent",color:"rgba(255,255,255,0.45)",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>Voir</button>];
+            return [<Mono>{l.id}</Mono>,l.produit,l.origine,<span style={{color:"#f59e0b",fontWeight:600}}>{l.poidsReception} kg</span>,<span style={{color:"#60a5fa",fontWeight:600}}>{l.poidsNet||l.poidsReception} kg</span>,<span style={{color:p>0?"#f87171":"rgba(255,255,255,0.22)"}}>{p>0?"-"+(p.toFixed(1))+"kg ("+(pct)+"%)":"—"}</span>,<b style={{color:"#e2e8f0"}}>{l.expedition?.client||"—"}</b>,l.expedition?.destination||"—",<Badge etape={l.etapeActuelle}/>,new Date(l.dateReception).toLocaleDateString("fr-FR"),<button onClick={()=>sSel(l)} style={{padding:"4px 9px",borderRadius:6,border:"1px solid rgba(255,255,255,0.1)",background:"transparent",color:"rgba(255,255,255,0.45)",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>Voir</button>];
           })}
         />
       </div>
@@ -316,7 +316,7 @@ function Lots({lots}) {
               <button onClick={()=>sSel(null)} style={{background:"rgba(255,255,255,0.07)",border:"none",borderRadius:7,color:"#fff",width:28,height:28,cursor:"pointer",fontSize:14}}>✕</button>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:18}}>
-              {[["Produit",sel.produit],["Variété",sel.variete||"—"],["Ferme",sel.origine],["Poids reçu",${sel.poidsReception} kg],["Poids net",${sel.poidsNet||sel.poidsReception} kg],["Étape",sel.etapeActuelle],["Température",sel.temperature?${sel.temperature}°C:"—"],["Date réception",new Date(sel.dateReception).toLocaleString("fr-FR")]].map(([k,v])=>(
+              {[["Produit",sel.produit],["Variété",sel.variete||"—"],["Ferme",sel.origine],["Poids reçu",""+(sel.poidsReception)+" kg"],["Poids net",""+(sel.poidsNet||sel.poidsReception)+" kg"],["Étape",sel.etapeActuelle],["Température",sel.temperature?""+(sel.temperature)+"°C":"—"],["Date réception",new Date(sel.dateReception).toLocaleString("fr-FR")]].map(([k,v])=>(
                 <div key={k} style={{background:"rgba(255,255,255,0.04)",borderRadius:8,padding:10}}>
                   <div style={{fontSize:10,color:"rgba(255,255,255,0.32)",marginBottom:3,textTransform:"uppercase"}}>{k}</div>
                   <div style={{fontSize:13,fontWeight:600,color:"#fff"}}>{v}</div>
@@ -327,7 +327,7 @@ function Lots({lots}) {
               <div style={{background:"rgba(20,184,166,0.07)",border:"1px solid rgba(20,184,166,0.18)",borderRadius:11,padding:14,marginBottom:18}}>
                 <div style={{fontSize:12,fontWeight:700,color:"#14b8a6",marginBottom:10}}>🚛 Expédition</div>
                 <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:"5px 14px",fontSize:12}}>
-                  {[["Client",sel.expedition.client],["Destination",sel.expedition.destination],["Transporteur",sel.expedition.transporteur],["N° Camion",sel.expedition.numCamion],["Cartons",sel.expedition.nbCartons],["Temp. camion",sel.expedition.tempCamion?${sel.expedition.tempCamion}°C:"—"],["Poids chargé",${sel.expedition.poidsFinal||sel.poidsNet} kg],["Date",sel.expedition.date?new Date(sel.expedition.date).toLocaleString("fr-FR"):"—"]].map(([k,v])=>[
+                  {[["Client",sel.expedition.client],["Destination",sel.expedition.destination],["Transporteur",sel.expedition.transporteur],["N° Camion",sel.expedition.numCamion],["Cartons",sel.expedition.nbCartons],["Temp. camion",sel.expedition.tempCamion?""+(sel.expedition.tempCamion)+"°C":"—"],["Poids chargé",""+(sel.expedition.poidsFinal||sel.poidsNet)+" kg"],["Date",sel.expedition.date?new Date(sel.expedition.date).toLocaleString("fr-FR"):"—"]].map(([k,v])=>[
                     <span key={k+"k"} style={{color:"rgba(255,255,255,0.38)"}}>{k}:</span>,
                     <span key={k+"v"} style={{color:"#e2e8f0",fontWeight:500}}>{v||"—"}</span>
                   ])}
@@ -364,13 +364,13 @@ function Analyse({lots}) {
   return (
     <div><PH title="📈 Analyse" sub="Tableaux de bord analytiques & performance"/>
     <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:13,marginBottom:22}}>
-      {[{label:"Total lots",value:lots.length,icon:"📦",color:"#10b981"},{label:"Kg reçus",value:${totalRecu.toFixed(0)} kg,icon:"⚖️",color:"#f59e0b"},{label:"Pertes",value:${(totalRecu-totalNet).toFixed(0)} kg,icon:"📉",color:"#f87171"},{label:"Rendement",value:${rend}%,icon:"✅",color:"#a78bfa"}].map((s,i)=>(
+      {[{label:"Total lots",value:lots.length,icon:"📦",color:"#10b981"},{label:"Kg reçus",value:""+(totalRecu.toFixed(0))+" kg",icon:"⚖️",color:"#f59e0b"},{label:"Pertes",value:""+((totalRecu-totalNet).toFixed(0))+" kg",icon:"📉",color:"#f87171"},{label:"Rendement",value:""+(rend)+"%",icon:"✅",color:"#a78bfa"}].map((s,i)=>(
         <div key={i} style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:20}}><div style={{fontSize:22}}>{s.icon}</div><div style={{fontSize:22,fontWeight:800,color:s.color,marginTop:7}}>{s.value}</div><div style={{fontSize:11,color:"rgba(255,255,255,0.36)",marginTop:3}}>{s.label}</div></div>
       ))}
     </div>
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18,marginBottom:18}}>
       <Card title="🍓 Par produit">
-        {Object.keys(parProd).length===0?<Empty txt="Aucune donnée"/>:Object.entries(parProd).map(([p,d])=>{const r=d.recu>0?(d.net/d.recu*100).toFixed(1):0;return(<div key={p} style={{marginBottom:14}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:5}}><span style={{fontWeight:600}}>{p}</span><span style={{color:"rgba(255,255,255,0.4)"}}>{d.count} lots — {r}% rend.</span></div><div style={{height:6,background:"rgba(255,255,255,0.06)",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:totalRecu>0?${Math.max(4,(d.recu/totalRecu*100)).toFixed(0)}%:"4%",background:p.includes("Fraises")?"#f43f5e":"#84cc16",borderRadius:3}}/></div></div>);})}
+        {Object.keys(parProd).length===0?<Empty txt="Aucune donnée"/>:Object.entries(parProd).map(([p,d])=>{const r=d.recu>0?(d.net/d.recu*100).toFixed(1):0;return(<div key={p} style={{marginBottom:14}}><div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:5}}><span style={{fontWeight:600}}>{p}</span><span style={{color:"rgba(255,255,255,0.4)"}}>{d.count} lots — {r}% rend.</span></div><div style={{height:6,background:"rgba(255,255,255,0.06)",borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:totalRecu>0?""+(Math.max(4,(d.recu/totalRecu*100)).toFixed(0))+"%":"4%",background:p.includes("Fraises")?"#f43f5e":"#84cc16",borderRadius:3}}/></div></div>);})}
       </Card>
       <Card title="🌾 Par ferme">
         {Object.keys(parFerme).length===0?<Empty txt="Aucune donnée"/>:Object.entries(parFerme).sort((a,b)=>b[1].recu-a[1].recu).map(([f,d])=>(
@@ -427,7 +427,7 @@ function Users({users,setUsers}) {
         <FL>Rôle</FL><FS value={f.role} onChange={v=>upd("role",v)} opts={roles} ph="Sélectionner..."/>
         <Btn color="#6366f1" onClick={add}>➕ Créer l'utilisateur</Btn>
       </Card>
-      <Card title={Utilisateurs (${users.length})}>
+      <Card title={"Utilisateurs ("+users.length+")"}>
         <Table headers={["Nom","Login","Rôle","Statut","Actions"]} rows={users.map(u=>[
           <b style={{color:"#fff"}}>{u.nom}</b>,<Mono>{u.username}</Mono>,
           <span style={{padding:"2px 9px",borderRadius:20,fontSize:10,background:"rgba(99,102,241,0.1)",color:"#818cf8",border:"1px solid rgba(99,102,241,0.22)"}}>{u.role}</span>,
@@ -445,13 +445,13 @@ function Users({users,setUsers}) {
 // UI ATOMS
 const PH=({title,sub})=><div style={{marginBottom:20}}><h2 style={{margin:0,fontSize:21,fontWeight:800,color:"#fff",letterSpacing:"-0.3px"}}>{title}</h2>{sub&&<p style={{margin:"4px 0 0",color:"rgba(255,255,255,0.36)",fontSize:13}}>{sub}</p>}</div>;
 const Card=({title,children})=><div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:13,padding:20}}><h3 style={{margin:"0 0 14px",fontSize:13,fontWeight:700,color:"rgba(255,255,255,0.65)"}}>{title}</h3>{children}</div>;
-const Alert=({txt,err})=><div style={{background:err?"rgba(239,68,68,0.1)":"rgba(16,185,129,0.1)",border:1px solid ${err?"rgba(239,68,68,0.22)":"rgba(16,185,129,0.22)"},borderRadius:9,padding:"11px 16px",marginBottom:18,color:err?"#f87171":"#10b981",fontWeight:600,fontSize:13}}>{txt}</div>;
+const Alert=({txt,err})=><div style={{background:err?"rgba(239,68,68,0.1)":"rgba(16,185,129,0.1)",border:"1px solid "+(err?"rgba(239,68,68,0.22)":"rgba(16,185,129,0.22)")+"",borderRadius:9,padding:"11px 16px",marginBottom:18,color:err?"#f87171":"#10b981",fontWeight:600,fontSize:13}}>{txt}</div>;
 const Empty=({txt})=><div style={{textAlign:"center",padding:"34px 0",color:"rgba(255,255,255,0.2)",fontSize:13}}>{txt}</div>;
 const Mono=({children,clr="#10b981"})=><span style={{fontFamily:"Space Mono,monospace",fontSize:12,fontWeight:700,color:clr}}>{children}</span>;
-const Badge=({etape})=>{const c=EC[etape]||"#94a3b8";return <span style={{padding:"2px 9px",borderRadius:20,fontSize:10,fontWeight:700,background:${c}16,color:c,border:1px solid ${c}30,textTransform:"capitalize"}}>{etape}</span>;};
+const Badge=({etape})=>{const c=EC[etape]||"#94a3b8";return <span style={{padding:"2px 9px",borderRadius:20,fontSize:10,fontWeight:700,background:""+(c)+"16",color:c,border:"1px solid "+(c)+"30",textTransform:"capitalize"}}>{etape}</span>;};
 const LotMini=({lot})=><div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.05)",borderRadius:9,padding:11,marginBottom:7}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><Mono>{lot.id}</Mono><Badge etape={lot.etapeActuelle}/></div><div style={{fontSize:12,color:"#e2e8f0",marginTop:4}}>{lot.produit} — <b>{lot.poidsReception} kg</b></div><div style={{fontSize:11,color:"rgba(255,255,255,0.28)",marginTop:2}}>{lot.origine}</div></div>;
 const Table=({headers,rows})=><table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}><thead><tr>{headers.map(h=><th key={h} style={{textAlign:"left",padding:"8px 10px",color:"rgba(255,255,255,0.28)",fontWeight:600,fontSize:10,textTransform:"uppercase",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>{h}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i} style={{borderBottom:"1px solid rgba(255,255,255,0.04)"}}>{row.map((cell,j)=><td key={j} style={{padding:"10px 10px",color:"rgba(255,255,255,0.58)"}}>{cell}</td>)}</tr>)}</tbody></table>;
-const Btn=({children,onClick,color})=><button onClick={onClick} style={{width:"100%",padding:12,background:linear-gradient(135deg,${color},${color}cc),border:"none",borderRadius:9,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",marginTop:5}}>{children}</button>;
+const Btn=({children,onClick,color})=><button onClick={onClick} style={{width:"100%",padding:12,background:"linear-gradient(135deg,"+(color)+","+(color)+"cc)",border:"none",borderRadius:9,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer",fontFamily:"inherit",marginTop:5}}>{children}</button>;
 const FL=({children})=><p style={{color:"rgba(255,255,255,0.4)",fontSize:11,fontWeight:600,marginBottom:5,marginTop:2,textTransform:"uppercase",letterSpacing:0.7}}>{children}</p>;
 const FI=({value,onChange,ph,type="text"})=><input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={ph} style={{width:"100%",padding:"10px 12px",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,color:"#fff",fontSize:13,outline:"none",marginBottom:11,boxSizing:"border-box",fontFamily:"inherit"}}/>;
 const FS=({value,onChange,opts,ph})=><select value={value} onChange={e=>onChange(e.target.value)} style={{width:"100%",padding:"10px 12px",background:"#1e293b",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,color:value?"#fff":"rgba(255,255,255,0.28)",fontSize:13,outline:"none",marginBottom:11,boxSizing:"border-box",fontFamily:"inherit"}}><option value="">{ph}</option>{opts.map(o=><option key={o} value={o}>{o}</option>)}</select>;
