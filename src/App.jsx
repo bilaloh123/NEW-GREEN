@@ -25,10 +25,11 @@ function exportCSV(lots) {
     const pct=l.poidsReception>0?((p/l.poidsReception)*100).toFixed(1):"0";
     const ex=l.expedition||{};
     return [l.id,l.produit,l.variete||"",l.origine,l.poidsReception,l.poidsNet||l.poidsReception,p,pct,l.etapeActuelle,new Date(l.dateReception).toLocaleDateString("fr-FR"),ex.client||"",ex.destination||"",ex.numCamion||"",ex.transporteur||"",ex.nbCartons||"",ex.tempCamion||"",ex.date?new Date(ex.date).toLocaleDateString("fr-FR"):"",ex.note||""]
-.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",");  });
+      .map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(",");
+  });
   const csv="\uFEFF"+[h.join(","),...rows].join("\n");
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
-  a.download=NEW_GREEN_${new Date().toISOString().slice(0,10)}.csv; a.click();
+  a.download="NEW_GREEN_"+new Date().toISOString().slice(0,10)+".csv"; a.click();
 }
 
 export default function App() {
