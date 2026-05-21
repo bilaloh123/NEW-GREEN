@@ -1,4 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// ─── SUPABASE CONFIG ─────────────────────────────────────────────────
+const SUPA_URL = "https://kwcphyhmzogwehyvqugz.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3Y3BoeWhtem9nd2VoeXZxdWd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNjcxNjMsImV4cCI6MjA5NDg0MzE2M30.eyqu1wk1DPyMfBxFM4qyql0d8ukToUi_V9abE6HxhyY";
+
+const db = {
+  async getLots() {
+    const r = await fetch(SUPA_URL+"/rest/v1/lots?select=*&order=created_at.desc", {headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY}});
+    const data = await r.json();
+    return data.map(row => row.data);
+  },
+  async saveLot(lot) {
+    await fetch(SUPA_URL+"/rest/v1/lots", {method:"POST",headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},body:JSON.stringify({id:lot.id,data:lot})});
+  },
+  async updateLot(lot) {
+    await fetch(SUPA_URL+"/rest/v1/lots?id=eq."+lot.id, {method:"PATCH",headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json"},body:JSON.stringify({data:lot})});
+  },
+  async saveMouvement(mv) {
+    await fetch(SUPA_URL+"/rest/v1/mouvements", {method:"POST",headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json"},body:JSON.stringify({lot_id:mv.lotId,data:mv})});
+  }
+};
 
 const APP_NAME = "NEW GREEN";
 const INITIAL_USERS = [
@@ -38,6 +59,17 @@ export default function App() {
   const [mouvements,setMouvements] = useState([]);
   const [cu,setCu]                 = useState(null);
   const [page,setPage]             = useState("dashboard");
+  const [loading,setLoading]       = useState(true);
+
+  useEffect(()=>{
+    db.getLots().then(data=>{ setLots(data||[]); setLoading(false); }).catch(()=>setLoading(false));
+  },[]);
+
+  const addLot = async (lot) => { setLots(p=>[...p,lot]); await db.saveLot(lot); };
+  const updateLot = async (lot) => { setLots(p=>p.map(l=>l.id===lot.id?lot:l)); await db.updateLot(lot); };
+  const addMouvement = async (mv) => { setMouvements(p=>[...p,mv]); await db.saveMouvement(mv); };
+
+  if(loading) return <div style={{minHeight:"100vh",background:"#080e1a",display:"flex",alignItems:"center",justifyContent:"center",color:"#10b981",fontSize:20,fontFamily:"DM Sans,sans-serif"}}>🌿 Chargement NEW GREEN...</div>;
   if(!cu) return <Login users={users} onLogin={setCu}/>;
   const isAdmin = cu.role==="admin";
   return (
@@ -46,9 +78,9 @@ export default function App() {
       <Sidebar user={cu} page={page} setPage={setPage} isAdmin={isAdmin} onLogout={()=>setCu(null)}/>
       <div style={{flex:1,padding:"26px 30px",overflowY:"auto",maxHeight:"100vh"}}>
         {page==="dashboard"  && <Dashboard lots={lots} user={cu}/>}
-        {page==="reception"  && <Reception lots={lots} setLots={setLots} setMouvements={setMouvements} user={cu}/>}
-        {page==="traitement" && <Traitement lots={lots} setLots={setLots} setMouvements={setMouvements} user={cu}/>}
-        {page==="expedition" && <Expedition lots={lots} setLots={setLots} setMouvements={setMouvements} user={cu}/>}
+        {page==="reception"  && <Reception lots={lots} addLot={addLot} addMouvement={addMouvement} user={cu}/>}
+        {page==="traitement" && <Traitement lots={lots} updateLot={updateLot} addMouvement={addMouvement} user={cu}/>}
+        {page==="expedition" && <Expedition lots={lots} updateLot={updateLot} addMouvement={addMouvement} user={cu}/>}
         {page==="lots"       && <Lots lots={lots}/>}
         {page==="analyse"    && <Analyse lots={lots}/>}
         {page==="rapports"   && <Rapports lots={lots}/>}
@@ -147,7 +179,7 @@ function Dashboard({lots,user}) {
   );
 }
 
-function Reception({lots,setLots,setMouvements,user}) {
+function Reception({lots,addLot,addMouvement,user}) {
   const [f,sF]=useState({produit:"",variete:"",origine:"",poidsReception:"",temperature:"",observation:""});
   const [ok,sOk]=useState(""); const upd=(k,v)=>sF(x=>({...x,[k]:v}));
   const genId=()=>{const pfx=f.produit?.startsWith("Fraises")?"FR":f.produit?.startsWith("Avocats")?"AV":"PR";return ""+(pfx)+"-"+(new Date().toISOString().slice(2,10).replace(/-/g,""))+"-"+(String(lots.length+1).padStart(4,"0"))+"";};
@@ -155,7 +187,7 @@ function Reception({lots,setLots,setMouvements,user}) {
     if(!f.produit||!f.origine||!f.poidsReception)return;
     const id=genId(),now=new Date().toISOString();
     const lot={id,...f,poidsReception:parseFloat(f.poidsReception),poidsNet:parseFloat(f.poidsReception),etapeActuelle:"réception",dateReception:now,historique:[{etape:"réception",date:now,user:user.nom,poids:parseFloat(f.poidsReception),note:f.observation}]};
-    setLots(p=>[...p,lot]); setMouvements(p=>[...p,{id:Date.now(),lotId:id,etape:"réception",date:now,user:user.nom,poids:parseFloat(f.poidsReception)}]);
+    addLot(lot); addMouvement({id:Date.now(),lotId:id,etape:"réception",date:now,user:user.nom,poids:parseFloat(f.poidsReception)});
     sF({produit:"",variete:"",origine:"",poidsReception:"",temperature:"",observation:""}); sOk("✅ Lot "+(id)+" enregistré !"); setTimeout(()=>sOk(""),4000);
   };
   return (
@@ -180,7 +212,7 @@ function Reception({lots,setLots,setMouvements,user}) {
   );
 }
 
-function Traitement({lots,setLots,setMouvements,user}) {
+function Traitement({lots,updateLot,addMouvement,user}) {
   const [sel,sSel]=useState(null); const [f,sF]=useState({etape:"",poids:"",pertes:"",note:""}); const [ok,sOk]=useState("");
   const upd=(k,v)=>sF(x=>({...x,[k]:v}));
   const etapesOk=user.role==="admin"?ETAPES:(ROLE_ETAPES[user.role]||[]);
@@ -188,8 +220,8 @@ function Traitement({lots,setLots,setMouvements,user}) {
   const valider=()=>{
     if(!sel||!f.etape||!f.poids)return;
     const now=new Date().toISOString(),kg=parseFloat(f.poids),pertes=parseFloat(f.pertes||0);
-    setLots(p=>p.map(l=>l.id===sel.id?{...l,etapeActuelle:f.etape,poidsNet:kg,historique:[...(l.historique||[]),{etape:f.etape,date:now,user:user.nom,poids:kg,pertes,note:f.note}]}:l));
-    setMouvements(p=>[...p,{id:Date.now(),lotId:sel.id,etape:f.etape,date:now,user:user.nom,poids:kg,pertes}]);
+    const updated={...sel,etapeActuelle:f.etape,poidsNet:kg,historique:[...(sel.historique||[]),{etape:f.etape,date:now,user:user.nom,poids:kg,pertes,note:f.note}]};
+    updateLot(updated); addMouvement({id:Date.now(),lotId:sel.id,etape:f.etape,date:now,user:user.nom,poids:kg,pertes});
     sOk("✅ Lot "+(sel.id)+" → "+(f.etape)+""); sSel(null); sF({etape:"",poids:"",pertes:"",note:""}); setTimeout(()=>sOk(""),4000);
   };
   return (
@@ -228,7 +260,7 @@ function Traitement({lots,setLots,setMouvements,user}) {
   );
 }
 
-function Expedition({lots,setLots,setMouvements,user}) {
+function Expedition({lots,updateLot,addMouvement,user}) {
   const [sel,sSel]=useState(null);
   const [f,sF]=useState({client:"",destination:"",transporteur:"",numCamion:"",nbCartons:"",poidsFinal:"",tempCamion:"",note:""});
   const [ok,sOk]=useState(""); const upd=(k,v)=>sF(x=>({...x,[k]:v}));
